@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  
+  frontend:
+    build:
+      context: ./frontend/
+      dockerfile: ./Dockerfile
+    ports:
+      - "8080:80" 
+    environment:
+      - API_URL=http://localhost:5000
+    networks:
+      - front_net
+      - back_net
+    depends_on:
+      - task_m
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+  
+
+  db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_DATABASE=$MYSQL_DB
+      - MYSQL_USER=$MYSQL_USER
+      - MYSQL_PASSWORD=$MYSQL_PASSWORD
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    env_file:
+      - ".env"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+      start_period: 30s
+    networks:
+      - db_net
+    restart: unless-stopped
+  
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - db_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  task_m:
+    build:
+      context: ./backend/
+      dockerfile: ./Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - MYSQL_USER=$MYSQL_USER
+      - MYSQL_PASSWORD=$MYSQL_PASSWORD
+      - MYSQL_HOST=$MYSQL_HOST
+      - MYSQL_DB=$MYSQL_DB
+      - MYSQL_PORT=3306
+      - REDIS_HOST=$REDIS_HOST
+      - REDIS_PORT=$REDIS_PORT
+      - FE_HOST=${FE_HOST}
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - ".env"
+    networks:
+      - back_net
+      - db_net
+    restart: unless-stopped
+    healthcheck:
+      test: [
+        "CMD", "python", "-c",
+        "import socket; s = socket.socket(); s.connect(('localhost', 5000)); s.close()"
+      ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  db_data:
+  redis_data:
+
+networks:
+  front_net:
+    driver: bridge
+
+  back_net:
+    driver: bridge  
+
+  db_net:
+    driver: bridge

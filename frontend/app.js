@@ -1,4 +1,4 @@
-const API_URL = "$API_URL"
+const API_URL = "http://localhost:5000"
 
 async function loadTasks() {
   const res = await fetch(`${API_URL}/api/tasks`);
