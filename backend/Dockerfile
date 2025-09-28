@@ -17,6 +17,7 @@ echo "DATABASE is available"\n\
 exec "$@"' > /wait-for.sh && chmod +x /wait-for.sh
 
 COPY . .
+EXPOSE 5000
 
 RUN pip install --no-cache-dir -r requirements.txt
 
