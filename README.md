@@ -5,3 +5,5 @@
 скрипт app.js выполняется без сбоев. Но доступ к backend есть по порту 5000
 ## commit Configuring reverse proxy and changing app.js
 - при настройке с обратным proxy, доступ осуществляется по  http://task2.local:8080. И доступа к backend с клиента нет.
+## Changing configuration
+- изменены настройки nginx, настройка через nginx-entrypoint.sh
